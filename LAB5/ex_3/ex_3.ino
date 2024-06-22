@@ -1,5 +1,5 @@
-#include <Servo.h>        // Include the Servo library
-#include <LiquidCrystal.h> // Include the LiquidCrystal library
+#include <Servo.h>
+#include <LiquidCrystal.h> 
 
 // Define pin constants for servos
 #define SERVO_X_PIN 9
@@ -41,10 +41,10 @@ int readAngle(char axis) {
     Serial.print("Enter angle for axis ");
     Serial.print(axis);
     Serial.println(" (0-180): ");
-    while (Serial.available() == 0) {} // Wait for input
-    angle = Serial.parseInt(); // Read the input angle
+    while (Serial.available() == 0) {}
+    angle = Serial.parseInt();
     if (angle >= 0 && angle <= 180) {
-      return angle; // Return valid angle
+      return angle;
     } else {
       Serial.println("Invalid angle! Please enter a value between 0 and 180.");
     }
