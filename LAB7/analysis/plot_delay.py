@@ -1,5 +1,7 @@
 import os
 import matplotlib.pyplot as plt
+import numpy as np
+import argparse
 
 # Define the paths to the result files
 RESULTS_DIR = './results'
@@ -28,28 +30,35 @@ def parse_results(file_path, delimiter=','):
             results.append((total_time, delta))
     return results
 
-def adjust_local_results(local_results):
+def compute_statistics(data):
     """
-    Adjusts the local results by normalizing them to match the scale of external results.
+    Computes statistics (mean, variance, standard deviation, min, max) for the delta values.
     
     Parameters:
-        local_results (list of tuples): The parsed local results.
+        data (list of tuples): The parsed results.
         
     Returns:
-        list of tuples: The adjusted local results.
+        dict: A dictionary containing the statistics.
     """
-    scale_factor = 100  # Adjust this factor based on the magnitude difference
-    adjusted_results = [(total, delta * scale_factor) for total, delta in local_results]
-    return adjusted_results
+    deltas = [delta for _, delta in data]
+    stats = {
+        'mean': np.mean(deltas),
+        'variance': np.var(deltas),
+        'std_dev': np.std(deltas),
+        'min': np.min(deltas),
+        'max': np.max(deltas)
+    }
+    return stats
 
-def plot_results(local_results, tcp_results, udp_results, dpi=500):
+def plot_results(local_results, tcp_results, udp_results, show_local, dpi):
     """
     Plots the delay as a function of time for local, TCP, and UDP results, and saves the plot as an image.
     
     Parameters:
-        local_results (list of tuples): The parsed and adjusted local results.
+        local_results (list of tuples): The parsed local results.
         tcp_results (list of tuples): The parsed TCP results.
         udp_results (list of tuples): The parsed UDP results.
+        show_local (bool): Whether to show the local results in the plot.
         dpi (int): The resolution of the saved plot image.
     """
     # Create images directory if it doesn't exist
@@ -58,46 +67,67 @@ def plot_results(local_results, tcp_results, udp_results, dpi=500):
     plt.figure(figsize=(12, 6), dpi=dpi)
     
     # Extract data for plotting
-    local_times, local_deltas = zip(*local_results)
     tcp_times, tcp_deltas = zip(*tcp_results)
     udp_times, udp_deltas = zip(*udp_results)
     
-    # Plot the data
-    plt.plot(local_times, local_deltas, label='Local (Adjusted)', color='blue', linestyle='--')
+    # Plot TCP and UDP results
     plt.plot(tcp_times, tcp_deltas, label='TCP', color='green')
     plt.plot(udp_times, udp_deltas, label='UDP', color='red')
     
+    # Plot local results if requested
+    if show_local:
+        local_times, local_deltas = zip(*local_results)
+        plt.plot(local_times, local_deltas, label='Local', color='blue', linestyle='--')
+
+    # Compute statistics
+    tcp_stats = compute_statistics(tcp_results)
+    udp_stats = compute_statistics(udp_results)
+
     # Add labels and title
     plt.xlabel('Total Time (microseconds)')
     plt.ylabel('Delta (microseconds)')
     plt.title('Delay vs. Time')
     plt.legend()
+
+    # Display statistics on the plot
+    stats_text = (
+        f"TCP:\n"
+        f"Mean: {tcp_stats['mean']:.2f} µs\n"
+        f"Variance: {tcp_stats['variance']:.2f} µs²\n"
+        f"Std Dev: {tcp_stats['std_dev']:.2f} µs\n"
+        f"Min: {tcp_stats['min']} µs\n"
+        f"Max: {tcp_stats['max']} µs\n\n"
+        f"UDP:\n"
+        f"Mean: {udp_stats['mean']:.2f} µs\n"
+        f"Variance: {udp_stats['variance']:.2f} µs²\n"
+        f"Std Dev: {udp_stats['std_dev']:.2f} µs\n"
+        f"Min: {udp_stats['min']} µs\n"
+        f"Max: {udp_stats['max']} µs"
+    )
     
-    # Save plot as an image
-    plot_filename = os.path.join(IMAGES_DIR, 'delay_vs_time.png')
+    plt.gcf().text(0.98, 0.5, stats_text, fontsize=10, va='center', ha='right', bbox=dict(facecolor='white', alpha=0.5))
+    
+    # Save plot as an image with different filenames for local results
+    plot_filename = os.path.join(IMAGES_DIR, 'delay_vs_time_local.png' if show_local else 'delay_vs_time.png')
     plt.savefig(plot_filename, dpi=dpi)
     
     # Show plot
     plt.grid(True)
     plt.show()
 
-def main(dpi=100):
+def main(dpi=100, show_local=False):
     # Parse the result files
     local_results = parse_results(LOCAL_RESULTS_FILE)
     tcp_results = parse_results(TCP_RESULTS_FILE, delimiter='|')
     udp_results = parse_results(UDP_RESULTS_FILE, delimiter='|')
     
-    # Adjust the local results for better visualization
-    adjusted_local_results = adjust_local_results(local_results)
-    
     # Plot the results
-    plot_results(adjusted_local_results, tcp_results, udp_results, dpi)
+    plot_results(local_results, tcp_results, udp_results, show_local, dpi)
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(description='Plot delay vs. time from result files.')
     parser.add_argument('--dpi', type=int, default=100, help='The resolution of the saved plot image (default: 100).')
+    parser.add_argument('--show-local', action='store_true', help='Show local results in the plot.')
     args = parser.parse_args()
 
-    main(dpi=args.dpi)
+    main(dpi=args.dpi, show_local=args.show_local)
