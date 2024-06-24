@@ -19,14 +19,14 @@ def parse_results(file_path, delimiter=','):
         delimiter (str): The delimiter used in the file to separate values.
         
     Returns:
-        list of tuples: A list of (total_time, delta) tuples.
+        list of tuples: A list of (total_time, delta) tuples in milliseconds.
     """
     results = []
     with open(file_path, 'r') as file:
         for line in file:
             parts = line.strip().split(delimiter)
-            total_time = int(parts[0].split(': ')[1].strip().split()[0])
-            delta = int(parts[1].split(': ')[1].strip().split()[0])
+            total_time = int(parts[0].split(': ')[1].strip().split()[0]) / 1000  # Convert from microseconds to milliseconds
+            delta = int(parts[1].split(': ')[1].strip().split()[0]) / 1000  # Convert from microseconds to milliseconds
             results.append((total_time, delta))
     return results
 
@@ -84,25 +84,25 @@ def plot_results(local_results, tcp_results, udp_results, show_local, dpi):
     udp_stats = compute_statistics(udp_results)
 
     # Add labels and title
-    plt.xlabel('Total Time (microseconds)')
-    plt.ylabel('Delta (microseconds)')
+    plt.xlabel('Total Time (milliseconds)')
+    plt.ylabel('Delta (milliseconds)')
     plt.title('Delay vs. Time')
     plt.legend()
 
     # Display statistics on the plot
     stats_text = (
         f"TCP:\n"
-        f"Mean: {tcp_stats['mean']:.2f} µs\n"
-        f"Variance: {tcp_stats['variance']:.2f} µs²\n"
-        f"Std Dev: {tcp_stats['std_dev']:.2f} µs\n"
-        f"Min: {tcp_stats['min']} µs\n"
-        f"Max: {tcp_stats['max']} µs\n\n"
+        f"Mean: {tcp_stats['mean']:.2f} ms\n"
+        f"Variance: {tcp_stats['variance']:.2f} ms²\n"
+        f"Std Dev: {tcp_stats['std_dev']:.2f} ms\n"
+        f"Min: {tcp_stats['min']} ms\n"
+        f"Max: {tcp_stats['max']} ms\n\n"
         f"UDP:\n"
-        f"Mean: {udp_stats['mean']:.2f} µs\n"
-        f"Variance: {udp_stats['variance']:.2f} µs²\n"
-        f"Std Dev: {udp_stats['std_dev']:.2f} µs\n"
-        f"Min: {udp_stats['min']} µs\n"
-        f"Max: {udp_stats['max']} µs"
+        f"Mean: {udp_stats['mean']:.2f} ms\n"
+        f"Variance: {udp_stats['variance']:.2f} ms²\n"
+        f"Std Dev: {udp_stats['std_dev']:.2f} ms\n"
+        f"Min: {udp_stats['min']} ms\n"
+        f"Max: {udp_stats['max']} ms"
     )
     
     plt.gcf().text(0.98, 0.5, stats_text, fontsize=10, va='center', ha='right', bbox=dict(facecolor='white', alpha=0.5))
